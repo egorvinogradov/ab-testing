@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>A/B testing demo</title>
+		<script type="text/javascript" src="lib/ab-testing.js"></script>
+	</head>
+	<body>
+		You group is:
+		<script>
+			document.write( AB.control('test_group') ? 'control' : 'test' );
+		</script>
+	</body>
+</html>

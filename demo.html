@@ -5,13 +5,13 @@
     <title>A/B testing demo</title>
     <script type="text/javascript" src="lib/ab-testing.js"></script>
     <script type="text/javascript">
-      AB.specifyPage('index');
+      //AB.specifyPage('index');
     </script>
   </head>
   <body>
     You group is:
     <script>
-      AB.write({
+      AB.write('show_message', {
         control: 'текст для control.',
         test: 'текст для test.'
       });

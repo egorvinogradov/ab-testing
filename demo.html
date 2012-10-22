@@ -3,11 +3,17 @@
 	<head>
 		<title>A/B testing demo</title>
 		<script type="text/javascript" src="lib/ab-testing.js"></script>
+		<script type="text/javascript">
+			AB.specifyPage('index');
+		</script>
 	</head>
 	<body>
 		You group is:
 		<script>
-			document.write( AB.control('test_group') ? 'control' : 'test' );
+			AB.write({
+				control: 'текст для control.',
+				test: 'текст для test.'
+			});
 		</script>
 	</body>
 </html>

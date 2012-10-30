@@ -17,22 +17,22 @@
     </style>
     <script src="lib/ab-testing.js"></script>
     <script>
-      AB.specifyPage('index');
+      // AB.specifyPage('index');
     </script>
   </head>
   <body>
     Группа эксперимента show_message:
     <script>
-      AB.write('show_message', {
-        control: 'control.',
-        test: 'test.'
-      });
+      // AB.write('show_message', {
+      //   control: 'control.',
+      //   test: 'test.'
+      // });
     </script>
     <div class="test" id="ab-container">
       <script>
-      	if ( AB.control('blue_button_vs_red_button') ) {
-      		document.getElementById('ab-container').className += ' control';
-      	}
+      	// if ( AB.control('blue_button_vs_red_button') ) {
+      	// 	document.getElementById('ab-container').className += ' control';
+      	// }
       </script>
       A/B container
     </div>

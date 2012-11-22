@@ -55,15 +55,27 @@ ab.prototype.saveUserData = function(params, callback){
 };
 
 ab.prototype.log = function(){
+
+    this.each(function(){});
+
     console.log(new Date(), arguments);
 };
 
 ab.prototype.each = function(arr, func, context){
-    return $.each(arr, this.proxy(func, context));
+    if ( Array.prototype.forEach ) {
+        Array.prototype.forEach.call(arr, func, context);
+    }
+    else {
+        for ( var i = 0, l = arr.length; i < l; i++ ) {
+            func.call(context, arr[i], i, arr);
+        }
+    }
 };
 
 ab.prototype.proxy = function(func, context){
-    return $.proxy(func, context);
+    return function(){
+        func.call(context);
+    };
 };
 
 ab.prototype.inArray = function(arr, element){
@@ -87,7 +99,7 @@ ab.prototype.add = function(target){
             !this.inArray(userData.targets, target)
         ) {
             this.setUserData({
-                targets: userData.targets.push(target);
+                targets: userData.targets.push(target)
             });
             this.saveUserData(this.getUserData(), this.proxy(function(){
                 this.log('Saved data:', experiment.name, experiment);
@@ -95,6 +107,39 @@ ab.prototype.add = function(target){
         }
 
     }, this);
+};
+
+ab.prototype.getExperiment = function(experimentName){
+    this.filter(this.experiments, function(experiment){
+        return experiment.name === experimentName;
+    });
+};
+
+ab.prototype.test = function(experimentName){
+    return this.getExperiment(experimentName).group === 'test';
+};
+
+ab.prototype.control = function(experimentName){
+    return !this.test(experimentName);
+};
+
+ab.prototype.write = function(experimentName, params){
+    document.write(
+        this.control(experimentName)
+            ? params.control
+            : params.test
+    );
+};
+
+ab.prototype.filter = function(arr, func, context){
+    var result = [];
+    for ( var i = 0, l = arr.length; i < l; i++ ) {
+        var element = arr[i];
+        if ( func.call(context, element) ) {
+            result.push(element);
+        }
+    }
+    return result;
 };
 
 ab.prototype.startTracking = function(experiment, callback){

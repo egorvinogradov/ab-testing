@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>A/B testing demo</title>
+<style>
+.test {
+    border: 1px solid #000;
+    padding: 10px;
+    margin: 10px 0;
+    background: red;
+}
+.control {
+    background: blue;
+}
+</style>
+<script src="demo_2.js"></script>
+<script>
+    // AB.specifyPage('index');
+</script>
+</head>
+<body>
+    Группа эксперимента show_message:
+    <script>
+        // AB.write('show_message', {
+        //   control: 'control.',
+        //   test: 'test.'
+        // });
+    </script>
+    <div class="test" id="ab-container">
+        <script>
+            // if ( AB.control('blue_button_vs_red_button') ) {
+            //  document.getElementById('ab-container').className += ' control';
+            // }
+        </script>A/B container
+    </div>
+</body>
+</html>
+
+
+

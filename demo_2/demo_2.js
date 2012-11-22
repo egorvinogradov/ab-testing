@@ -55,10 +55,10 @@ ab.prototype.saveUserData = function(params, callback){
 };
 
 ab.prototype.log = function(){
-
-    this.each(function(){});
-
-    console.log(new Date(), arguments);
+    if ( typeof console !== 'undefined' ) {
+        Array.prototype.unshift.call(arguments, '[' + new Date() + ']');
+        console.log.apply(console, arguments);
+    }
 };
 
 ab.prototype.each = function(arr, func, context){
@@ -72,19 +72,37 @@ ab.prototype.each = function(arr, func, context){
     }
 };
 
+ab.prototype.filter = function(arr, func, context){
+    if ( Array.prototype.filter ) {
+        return Array.prototype.filter.call(arr, func, context);
+    }
+    else {
+        var result;
+        for ( var i = 0, l = arr.length; i < l; i++ ) {
+            var element = arr[i];
+            if ( func.call(context, element, i, arr) ) {
+                result.push(element);
+            }
+        }
+        return result;
+    }
+};
+
 ab.prototype.proxy = function(func, context){
     return function(){
-        func.call(context);
+        func.apply(context, arguments);
     };
 };
 
 ab.prototype.inArray = function(arr, element){
-    return $.inArray(arr, element);
+    return !!this.filter(arr, function(el){
+        return el === element;
+    }).length;
 };
 
 ab.prototype.add = function(target){
 
-    this.each(this.experiments, function(i, experiment){
+    this.each(this.experiments, function(experiment){
 
         var userData = this.getUserData(experiment.name);
         
@@ -131,17 +149,6 @@ ab.prototype.write = function(experimentName, params){
     );
 };
 
-ab.prototype.filter = function(arr, func, context){
-    var result = [];
-    for ( var i = 0, l = arr.length; i < l; i++ ) {
-        var element = arr[i];
-        if ( func.call(context, element) ) {
-            result.push(element);
-        }
-    }
-    return result;
-};
-
 ab.prototype.startTracking = function(experiment, callback){
     this.getGroup(this.proxy(function(data){
         this.setUserData({
@@ -184,3 +191,24 @@ ab.prototype.initialize = function(){
         }
     }, this));
 };
+
+
+
+
+/* remove */
+
+var go = function(){
+    var AB = new ab();
+    AB.initialize();
+};
+
+var nn = function(){}
+
+var ll = function(a){
+    console.log('ll >>', a);
+}
+
+
+/* / remove */
+
+

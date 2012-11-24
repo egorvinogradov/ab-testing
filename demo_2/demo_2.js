@@ -198,7 +198,7 @@ ab.prototype.initialize = function(){
 /* remove */
 
 var go = function(){
-    var AB = new ab();
+    window.AB = new ab();
     AB.initialize();
 };
 
@@ -207,6 +207,10 @@ var nn = function(){}
 var ll = function(a){
     console.log('ll >>', a);
 }
+
+var ls = function(){
+    return localStorage.getItem();
+};
 
 
 /* / remove */

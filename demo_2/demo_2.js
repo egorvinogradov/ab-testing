@@ -63,11 +63,12 @@ ab.prototype.setUserData = function(experimentName, experimentData){
     
     // save to cookie
     
-    localStorage.setItem('_ab' + experimentName, JSON.stringify(experimentData));
+    localStorage.setItem('ab_' + experimentName, JSON.stringify(experimentData));
 };
 
 ab.prototype.saveUserData = function(experimentName, params, callback){
     // send history and group to server
+    callback && callback();
 };
 
 ab.prototype.log = function(){
@@ -182,7 +183,7 @@ ab.prototype.goal = function(target){
             
             // first coming
 
-            this.startTracking(experiment.name, this.proxy(function(){
+            this.startTracking(experiment, this.proxy(function(){
                 this.log('Started tracking:', experiment.name, experiment);
             }, this));
         }
@@ -198,10 +199,6 @@ ab.prototype.goal = function(target){
                 this.log('Experiment is finished:', experiment.name, userData, experiment);
             }
 
-            // this.setUserData(experiment.name, {
-            //     targets: userData.targets
-            // });
-
             this.setUserData(experiment.name, userData);
 
             this.saveUserData(experiment.name, userData, this.proxy(function(){
@@ -211,42 +208,6 @@ ab.prototype.goal = function(target){
 
     }, this);
 };
-
-
-
-        // if ( ( !userData.id || !userData.group || !userData.targets.length ) && experiment.targets[0] === target ) {
-        //     // first coming
-        //     this.startTracking(experiment.name, this.proxy(function(){
-        //         this.log('Started tracking:', experiment.name, experiment);
-        //     }, this));
-        // }
-
-
-
-
-
-        
-        // if ( !userData.id && target === experiment.targets[0] && !this.inArray(userData.targets, target) ) {
-        //     this.startTracking(experiment.name, this.proxy(function(){
-        //         this.log('Started tracking:', experiment.name, experiment);
-        //     }, this));
-        // }
-        // else if (
-        //     userData.targets.length &&
-        //     this.inArray(experiment.targets, target) &&
-        //     !this.inArray(userData.targets, target)
-        // ) {
-        //     this.setUserData({
-        //         targets: userData.targets.push(target)
-        //     });
-        //     this.saveUserData(this.getUserData(), this.proxy(function(){
-        //         this.log('Saved data:', experiment.name, experiment);
-        //     }, this));
-        // }
-
-
-
-
 
 ab.prototype.getExperiment = function(experimentName){
     this.filter(this.experiments, function(experiment){
@@ -271,13 +232,14 @@ ab.prototype.write = function(experimentName, params){
 };
 
 ab.prototype.startTracking = function(experiment, callback){
-    this.getGroup(this.proxy(function(data){
-        this.setUserData({
+    this.getGroup(experiment.name, this.proxy(function(data){
+        var userData = {
             id: data.id,
             group: data.group,
             targets: [experiment.targets[0]]
-        });
-        callback();
+        };
+        this.setUserData(experiment.name, userData);
+        this.saveUserData(experiment.name, userData, callback);
     }, this));
 };
 

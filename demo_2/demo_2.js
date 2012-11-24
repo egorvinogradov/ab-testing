@@ -23,34 +23,46 @@ ab.prototype.getGroup = function(experimentName, callback){
 
 };
 
-ab.prototype.getUserData = function(experimentName, param){
+ab.prototype.getUserData = function(experimentName){
     
     // parse cookies
 
-    if ( experimentName === 'red_button_vs_blue_button' ) {
-        return {
-            group: 'test',
-            targets: [
-                'index'
-            ]
-        };
+    // var mock = {
+    //     red_button_vs_blue_button: {
+    //         id: 1,
+    //         group: 'test',
+    //         targets: [
+    //             'index'
+    //         ]
+    //     },
+    //     left_sidebar_vs_right_sidebar: {
+    //         id: 2,
+    //         group: 'control',
+    //         targets: [
+    //             'hotelpage'
+    //         ]
+    //     }
+    // };
+    // return mock[experimentName] || {};
+    
+    var str = localStorage.getItem('ab_' + experimentName);
+    var json;
+
+    try {
+        json = JSON.parse(str);
     }
-    else if ( experimentName === 'left_sidebar_vs_right_sidebar' ) {
-        return {
-            group: 'control',
-            targets: [
-                'hotelpage'
-            ]
-        };
-    };
+    catch (e) {};
+    return json || {};
 };
 
-ab.prototype.setUserData = function(params){
+ab.prototype.setUserData = function(experimentName, experimentData){
+    
     // save to cookie
-    localStorage.setItem('_ab', params);
+    
+    localStorage.setItem('_ab' + experimentName, JSON.stringify(experimentData));
 };
 
-ab.prototype.saveUserData = function(params, callback){
+ab.prototype.saveUserData = function(experimentName, params, callback){
     // send history and group to server
 };
 
@@ -100,32 +112,108 @@ ab.prototype.inArray = function(arr, element){
     }).length;
 };
 
-ab.prototype.add = function(target){
+ab.prototype.isGoalAdded = function(target, userData){
+    return userData.id && userData.group && this.inArray(userData.targets, target); 
+};
+
+ab.prototype.isStartedTracking = function(userData){
+    return userData.id && userData.group && userData.targets.length;
+};
+
+ab.prototype.isExperimentFinished = function(experiment, userData){
+    var finished = experiment.targets.length === userData.targets.length;
+    if ( !finished ) {
+        for ( var i = 0, l = experiment.targets.length; i < l; i++ ) {
+            if ( !this.inArray(userData.targets, experiment.targets[i]) ) {
+                return false;
+            }
+        }
+        return true;
+    }
+    else {
+        return false;
+    }
+};
+
+ab.prototype.goal = function(target){
 
     this.each(this.experiments, function(experiment){
 
         var userData = this.getUserData(experiment.name);
-        
-        if ( !userData.id && target === experiment.targets[0] ) {
+
+        // первое посещение
+        // повторное посещение
+        // первое посещение не стартовой цели
+        // посещение последней страницы
+
+        if ( !this.isGoalAdded(target, userData) && experiment.targets[0] === target ) {
+            
+            // first coming
+            
             this.startTracking(experiment.name, this.proxy(function(){
                 this.log('Started tracking:', experiment.name, experiment);
             }, this));
         }
-        else if (
-            userData.targets.length &&
-            this.inArray(experiment.targets, target) &&
-            !this.inArray(userData.targets, target)
-        ) {
-            this.setUserData({
-                targets: userData.targets.push(target)
-            });
-            this.saveUserData(this.getUserData(), this.proxy(function(){
-                this.log('Saved data:', experiment.name, experiment);
+        else if ( !this.isGoalAdded(target, userData) && this.isStartedTracking(userData) && this.inArray(experiment.targets, target) ) {
+            
+            // first coming to second part goal
+            
+            userData.targets.push(target);
+
+            if ( this.isExperimentFinished(experiment, userData) ) {
+                this.log('Experiment is finished:', experiment.name, userData, experiment);
+            }
+
+            // this.setUserData(experiment.name, {
+            //     targets: userData.targets
+            // });
+
+            this.setUserData(experiment.name, userData);
+
+            this.saveUserData(experiment.name, userData, this.proxy(function(){
+                this.log('Saved user data:', experiment.name, userData, experiment);
             }, this));
         }
 
     }, this);
 };
+
+
+
+
+        // if ( ( !userData.id || !userData.group || !userData.targets.length ) && experiment.targets[0] === target ) {
+        //     // first coming
+        //     this.startTracking(experiment.name, this.proxy(function(){
+        //         this.log('Started tracking:', experiment.name, experiment);
+        //     }, this));
+        // }
+
+
+
+
+
+        
+        // if ( !userData.id && target === experiment.targets[0] && !this.inArray(userData.targets, target) ) {
+        //     this.startTracking(experiment.name, this.proxy(function(){
+        //         this.log('Started tracking:', experiment.name, experiment);
+        //     }, this));
+        // }
+        // else if (
+        //     userData.targets.length &&
+        //     this.inArray(experiment.targets, target) &&
+        //     !this.inArray(userData.targets, target)
+        // ) {
+        //     this.setUserData({
+        //         targets: userData.targets.push(target)
+        //     });
+        //     this.saveUserData(this.getUserData(), this.proxy(function(){
+        //         this.log('Saved data:', experiment.name, experiment);
+        //     }, this));
+        // }
+
+
+
+
 
 ab.prototype.getExperiment = function(experimentName){
     this.filter(this.experiments, function(experiment){
@@ -209,7 +297,7 @@ var ll = function(a){
 }
 
 var ls = function(){
-    return localStorage.getItem();
+    return JSON.parse(localStorage.getItem('_ab'));
 };
 
 

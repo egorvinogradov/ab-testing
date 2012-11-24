@@ -27,23 +27,27 @@ ab.prototype.getUserData = function(experimentName){
     
     // parse cookies
 
-    // var mock = {
-    //     red_button_vs_blue_button: {
-    //         id: 1,
-    //         group: 'test',
-    //         targets: [
-    //             'index'
-    //         ]
-    //     },
-    //     left_sidebar_vs_right_sidebar: {
-    //         id: 2,
-    //         group: 'control',
-    //         targets: [
-    //             'hotelpage'
-    //         ]
-    //     }
-    // };
-    // return mock[experimentName] || {};
+    /*
+
+    var mock = {
+        red_button_vs_blue_button: {
+            id: 1,
+            group: 'test',
+            targets: [
+                'index'
+            ]
+        },
+        left_sidebar_vs_right_sidebar: {
+            id: 2,
+            group: 'control',
+            targets: [
+                'hotelpage'
+            ]
+        }
+    };
+    return mock[experimentName] || {};
+
+    */
     
     var str = localStorage.getItem('ab_' + experimentName);
     var json;
@@ -74,17 +78,26 @@ ab.prototype.log = function(){
 };
 
 ab.prototype.each = function(arr, func, context){
+    if ( !arr || !func ) {
+        return;
+    }
     if ( Array.prototype.forEach ) {
         Array.prototype.forEach.call(arr, func, context);
     }
     else {
         for ( var i = 0, l = arr.length; i < l; i++ ) {
-            func.call(context, arr[i], i, arr);
+            func.call(context || window, arr[i], i, arr);
         }
     }
 };
 
 ab.prototype.filter = function(arr, func, context){
+    if ( !arr ) {
+        return;
+    }
+    if ( !func ) {
+        return arr;
+    }
     if ( Array.prototype.filter ) {
         return Array.prototype.filter.call(arr, func, context);
     }
@@ -92,7 +105,7 @@ ab.prototype.filter = function(arr, func, context){
         var result;
         for ( var i = 0, l = arr.length; i < l; i++ ) {
             var element = arr[i];
-            if ( func.call(context, element, i, arr) ) {
+            if ( func.call(context || window, element, i, arr) ) {
                 result.push(element);
             }
         }
@@ -102,22 +115,25 @@ ab.prototype.filter = function(arr, func, context){
 
 ab.prototype.proxy = function(func, context){
     return function(){
-        func.apply(context, arguments);
+        func.apply(context || window, arguments);
     };
 };
 
 ab.prototype.inArray = function(arr, element){
-    return !!this.filter(arr, function(el){
-        return el === element;
-    }).length;
+    if ( arr && element ) {
+        return !!this.filter(arr, function(el){
+            return el === element;
+        }).length;
+    }
+    return false;
 };
 
 ab.prototype.isGoalAdded = function(target, userData){
-    return userData.id && userData.group && this.inArray(userData.targets, target); 
+    return !!this.inArray(userData.targets, target);
 };
 
 ab.prototype.isStartedTracking = function(userData){
-    return userData.id && userData.group && userData.targets.length;
+    return !!( userData.id && userData.group && userData.targets.length );
 };
 
 ab.prototype.isExperimentFinished = function(experiment, userData){
@@ -141,15 +157,31 @@ ab.prototype.goal = function(target){
 
         var userData = this.getUserData(experiment.name);
 
+        this.log('>>>', experiment.name, experiment, userData);
+
         // первое посещение
         // повторное посещение
         // первое посещение не стартовой цели
         // посещение последней страницы
 
+
+        this.log(
+            '>>> first coming',
+            !this.isGoalAdded(target, userData) && experiment.targets[0] === target
+                ? 'TRUE'
+                : 'FALSE',
+            !this.isGoalAdded(target, userData),
+            experiment.targets[0] === target,
+            '----',
+            experiment.name,
+            experiment,
+            userData
+        );
+
         if ( !this.isGoalAdded(target, userData) && experiment.targets[0] === target ) {
             
             // first coming
-            
+
             this.startTracking(experiment.name, this.proxy(function(){
                 this.log('Started tracking:', experiment.name, experiment);
             }, this));
@@ -159,6 +191,8 @@ ab.prototype.goal = function(target){
             // first coming to second part goal
             
             userData.targets.push(target);
+
+            this.log('>>> first coming to second part goal', experiment.name, experiment, userData);
 
             if ( this.isExperimentFinished(experiment, userData) ) {
                 this.log('Experiment is finished:', experiment.name, userData, experiment);
@@ -177,7 +211,6 @@ ab.prototype.goal = function(target){
 
     }, this);
 };
-
 
 
 

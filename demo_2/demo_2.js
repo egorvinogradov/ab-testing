@@ -182,6 +182,15 @@ ab.prototype.control = function(experimentName){
 };
 
 ab.prototype.write = function(experimentName, params){
+    var fakeElementIds = {
+        control: ''
+    };
+
+
+    var fakeElements = {
+        name: {},
+        control: '<ab id=""></ab>'
+    };
     document.write(
         this.control(experimentName)
             ? params.control

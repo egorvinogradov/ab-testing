@@ -138,8 +138,8 @@ ab.prototype.isStartedTracking = function(userData){
 };
 
 ab.prototype.isExperimentFinished = function(experiment, userData){
-    var finished = experiment.targets.length === userData.targets.length;
-    if ( !finished ) {
+    var areTargetsEquals = experiment.targets.length === userData.targets.length;
+    if ( areTargetsEquals ) {
         for ( var i = 0, l = experiment.targets.length; i < l; i++ ) {
             if ( !this.inArray(userData.targets, experiment.targets[i]) ) {
                 return false;

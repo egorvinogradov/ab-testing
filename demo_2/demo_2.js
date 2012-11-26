@@ -50,6 +50,75 @@ ab.prototype.sendError = function(e){
     // todo: send
 };
 
+
+/* lib */
+
+ab.prototype.extend = function(){
+    if ( arguments.length < 2 ) {
+        return arguments[0];
+    }
+    var result = arguments[0];
+    this.each(arguments, function(obj){
+        for ( var key in obj ) {
+            result[key] = obj[key];
+        }
+    }, this);
+    return result;
+};
+
+ab.prototype.param = function(params){
+    var result = [];
+    for (var key in params) {
+        result.push(encodeURIComponent(key) + '=' + encodeURIComponent(params[key]));
+    }
+    return result.join('&');
+};
+
+ab.prototype.createEl = function(tagName, attributes){
+    var elem = document.createElement(tagName);
+    for (var key in attributes) {
+        elem[key] = attributes[key];
+    }
+    return elem;
+};
+
+ab.prototype.ajax = function(params){
+    var id = 'ab-ajax_' + +new Date();
+    var scriptEl;
+    var onComplete = function(){
+        var elem = document.getElementById(id);
+        elem.parentNode.removeChild(elem);
+        if (window[id]) {
+            delete window[id];
+        }
+    };
+    var getUrl = function(url, data){
+        return url + ( data ? '?' + this.param(data) : '' );
+    };
+    window[id] = function (data) {
+        if ( params.complete ) {
+            params.complete(data);
+        }
+        else if ( params.success ) {
+            params.success(data);
+        }
+        onComplete();
+    };
+    scriptEl = this.createEl('script', {
+        id: id,
+        src: getUrl(params.url, this.extend({
+            callback: id
+        }, params.data)),
+        onerror: function (e) {
+            params.error(e);
+            onComplete();
+        }
+    });
+    document
+        .getElementsByTagName('body')[0]
+        .appendChild(scriptEl);
+};
+
 ab.prototype.log = function(){
     if ( typeof console !== 'undefined' ) {
         Array.prototype.unshift.call(arguments, '[' + new Date() + ']');
@@ -107,6 +176,9 @@ ab.prototype.inArray = function(arr, element){
     }
     return false;
 };
+
+/* / lib */
+
 
 ab.prototype.isGoalAdded = function(target, userData){
     return !!this.inArray(userData.targets, target);
@@ -190,7 +262,7 @@ ab.prototype.write = function(experimentName, params){
 };
 
 ab.prototype.execute = function(experimentName, params){
-    var scriptEl = document.createElement('script');
+    var scriptEl;
     var scriptCode;
     if ( this.control(experimentName) ) {
         if ( params.control ) {
@@ -202,8 +274,10 @@ ab.prototype.execute = function(experimentName, params){
             scriptCode = '(' + params.test.toString() + '(\'' + experimentName + '\', \'test\'))';
         }
     }
-    scriptEl.className = 'ab_execute';
-    scriptEl.innerHTML = scriptCode;
+    scriptEl = this.createEl('script', {
+        className: 'ab_execute',
+        innerHTML: scriptCode
+    });
     document
         .getElementsByTagName('body')[0]
         .appendChild(scriptEl);

@@ -14,36 +14,36 @@
 
     ab.prototype.getGroup = function(experimentName, callback){
 
-        // this.ajax({
-        //     url: this.settings.host + this.settings.group,
-        //     data: {
-        //         experiment: experimentName
-        //     },
-        //     complete: function(data){
-        //         if ( data && data.status === 'OK' ) {
-        //             callback && callback(data.user);
-        //         }
-        //         else {
-        //             this.sendError({
-        //                 message: 'Can\'t load new user group',
-        //                 data: data
-        //             });
-        //         }
-        //     }
-        // });
+        this.ajax({
+            url: this.settings.host + this.settings.group,
+            data: {
+                experiment: experimentName
+            },
+            complete: function(data){
+                if ( data && data.status === 'OK' ) {
+                    callback && callback(data.user);
+                }
+                else {
+                    this.sendError({
+                        message: 'Can\'t load new user group',
+                        data: data
+                    });
+                }
+            }
+        });
 
-        if ( experimentName === 'red_button_vs_blue_button' ) {
-            callback({
-                id: 1,
-                group: 'test'
-            });
-        }
-        else if ( experimentName === 'left_sidebar_vs_right_sidebar' ) {
-            callback({
-                id: 2,
-                group: 'control'
-            });
-        }
+        // if ( experimentName === 'red_button_vs_blue_button' ) {
+        //     callback({
+        //         id: 1,
+        //         group: 'test'
+        //     });
+        // }
+        // else if ( experimentName === 'left_sidebar_vs_right_sidebar' ) {
+        //     callback({
+        //         id: 2,
+        //         group: 'control'
+        //     });
+        // }
 
     };
 
@@ -62,25 +62,23 @@
     };
 
     ab.prototype.saveUserData = function(experimentName, params, callback){
-
-        // this.ajax({
-        //     url: this.settings.host + this.settings.track,
-        //     data: this.extend({
-        //         experiment: experimentName
-        //     }, params),
-        //     complete: function(data){
-        //         if ( data && data.status === 'OK' ) {
-        //             callback && callback();
-        //         }
-        //         else {
-        //             this.sendError({
-        //                 message: 'Can\'t track user behaviour',
-        //                 data: data
-        //             });
-        //         }
-        //     }
-        // });
-
+        this.ajax({
+            url: this.settings.host + this.settings.track,
+            data: this.extend({
+                experiment: experimentName
+            }, params),
+            complete: function(data){
+                if ( data && data.status === 'OK' ) {
+                    callback && callback();
+                }
+                else {
+                    this.sendError({
+                        message: 'Can\'t track user behaviour',
+                        data: data
+                    });
+                }
+            }
+        });
         callback && callback();
     };
 
@@ -92,17 +90,15 @@
             }
         };
         logError(e.message, e);
-
-        // this.ajax({
-        //     url: this.settings.host + this.settings.error,
-        //     data: e,
-        //     complete: function(data){
-        //         if ( !data || !data.status !== 'OK' ) {
-        //             logError('Can\'t send error message', data);
-        //         }
-        //     }
-        // });
-
+        this.ajax({
+            url: this.settings.host + this.settings.error,
+            data: e,
+            complete: function(data){
+                if ( !data || !data.status !== 'OK' ) {
+                    logError('Can\'t send error message', data);
+                }
+            }
+        });
     };
 
 
@@ -358,42 +354,42 @@
 
     ab.prototype.getExperiments = function(callback){
 
-        // this.ajax({
-        //     url: this.settings.host + this.settings.experiments,
-        //     complete: function(data){
-        //         if ( data && data.status === 'OK' ) {
-        //             callback && callback(data.experiments);
-        //         }
-        //         else {
-        //             this.sendError({
-        //                 message: 'Can\'t load experiments',
-        //                 data: data
-        //             });
-        //         }
-        //     }
-        // });
-
-        callback({
-            status: 'OK',
-            experiments: [
-                {
-                    name: 'red_button_vs_blue_button',
-                    targets: [
-                        'index',
-                        'catalog',
-                        'promo'
-                    ]
-                },
-                {
-                    name: 'left_sidebar_vs_right_sidebar',
-                    targets: [
-                        'hotelpage',
-                        'catalog',
-                        'payment'
-                    ]
+        this.ajax({
+            url: this.settings.host + this.settings.experiments,
+            complete: function(data){
+                if ( data && data.status === 'OK' ) {
+                    callback && callback(data.experiments);
                 }
-            ]
+                else {
+                    this.sendError({
+                        message: 'Can\'t load experiments',
+                        data: data
+                    });
+                }
+            }
         });
+
+        // callback({
+        //     status: 'OK',
+        //     experiments: [
+        //         {
+        //             name: 'red_button_vs_blue_button',
+        //             targets: [
+        //                 'index',
+        //                 'catalog',
+        //                 'promo'
+        //             ]
+        //         },
+        //         {
+        //             name: 'left_sidebar_vs_right_sidebar',
+        //             targets: [
+        //                 'hotelpage',
+        //                 'catalog',
+        //                 'payment'
+        //             ]
+        //         }
+        //     ]
+        // });
     };
 
     ab.prototype.initialize = function(options){
@@ -433,31 +429,3 @@
     window.AB = new ab();
 
 }());
-
-
-
-
-/* remove */
-
-function ii (){
-    alert(qqq)
-};
-
-var go = function(){
-
-};
-
-var nn = function(){}
-
-var ll = function(a){
-    console.log('ll >>', a);
-}
-
-var ls = function(){
-    return JSON.parse(localStorage.getItem('_ab'));
-};
-
-
-/* / remove */
-
-

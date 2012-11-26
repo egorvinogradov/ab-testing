@@ -1,35 +1,54 @@
 (function(){
 
     function ab(){
+
         /** @constructor */
+        
+        this.settings = {
+            host: 'http://127.0.0.1:3000/api',
+            experiment: '/experiment',
+            group: '/group',
+            error: '/error'
+        };
     };
 
     ab.prototype.getGroup = function(experimentName, callback){
 
-        // get from server
+        // this.ajax({
+        //     url: this.settings.host + this.settings.group,
+        //     data: {
+        //         experiment: experimentName
+        //     },
+        //     complete: function(data){
+        //         if ( data && data.status === 'OK' ) {
+        //             callback && callback(data.user);
+        //         }
+        //         else {
+        //             this.sendError({
+        //                 message: 'Can\'t load new user group',
+        //                 data: data
+        //             });
+        //         }
+        //     }
+        // });
 
         if ( experimentName === 'red_button_vs_blue_button' ) {
             callback({
-                status: 'OK',
-                user: {
-                    id: 1,
-                    group: 'test'
-                }
+                id: 1,
+                group: 'test'
             });
         }
         else if ( experimentName === 'left_sidebar_vs_right_sidebar' ) {
             callback({
-                status: 'OK',
-                user: {
-                    id: 2,
-                    group: 'control'
-                }
+                id: 2,
+                group: 'control'
             });
         }
+
     };
 
     ab.prototype.getUserData = function(experimentName){
-        var str = localStorage.getItem('ab_' + experimentName);
+        var str = localStorage.getItem('ab_' + experimentName); // TODO: save to cookie
         var json;
         try {
             json = JSON.parse(str);
@@ -43,13 +62,47 @@
     };
 
     ab.prototype.saveUserData = function(experimentName, params, callback){
-        // send history and group to server
+
+        // this.ajax({
+        //     url: this.settings.host + this.settings.track,
+        //     data: this.extend({
+        //         experiment: experimentName
+        //     }, params),
+        //     complete: function(data){
+        //         if ( data && data.status === 'OK' ) {
+        //             callback && callback();
+        //         }
+        //         else {
+        //             this.sendError({
+        //                 message: 'Can\'t track user behaviour',
+        //                 data: data
+        //             });
+        //         }
+        //     }
+        // });
+
         callback && callback();
     };
 
     ab.prototype.sendError = function(e){
-        console.error(e.message, e);
-        // todo: send
+        var logError = function(){
+            if ( typeof console !== 'undefined' ) {
+                Array.prototype.unshift.call(arguments, '[' + new Date() + ']');
+                console.error.apply(console, arguments);
+            }
+        };
+        logError(e.message, e);
+
+        // this.ajax({
+        //     url: this.settings.host + this.settings.error,
+        //     data: e,
+        //     complete: function(data){
+        //         if ( !data || !data.status !== 'OK' ) {
+        //             logError('Can\'t send error message', data);
+        //         }
+        //     }
+        // });
+
     };
 
 
@@ -59,7 +112,7 @@
         if ( arguments.length < 2 ) {
             return arguments[0];
         }
-        var result = arguments[0];
+        var result = arguments[0] || {};
         this.each(arguments, function(obj){
             for ( var key in obj ) {
                 result[key] = obj[key];
@@ -85,34 +138,40 @@
     };
 
     ab.prototype.ajax = function(params){
-        var id = 'ab-ajax_' + +new Date();
+        var scriptId = 'ab-ajax_' + +new Date();
         var scriptEl;
         var onComplete = function(){
-            var elem = document.getElementById(id);
+            var elem = document.getElementById(scriptId);
             elem.parentNode.removeChild(elem);
-            if (window[id]) {
-                delete window[id];
+            if (window[scriptId]) {
+                delete window[scriptId];
             }
         };
         var getUrl = function(url, data){
             return url + ( data ? '?' + this.param(data) : '' );
         };
-        window[id] = function (data) {
+        window[scriptId] = function (data) {
             if ( params.complete ) {
                 params.complete(data);
             }
-            else if ( params.success ) {
+            if ( params.success ) {
                 params.success(data);
             }
             onComplete();
         };
         scriptEl = this.createEl('script', {
-            id: id,
+            id: scriptId,
             src: getUrl(params.url, this.extend({
-                callback: id
+                callback: scriptId,
+                id: this.settings.id
             }, params.data)),
             onerror: function (e) {
-                params.error(e);
+                if ( params.complete ) {
+                    params.complete(e);
+                }
+                if ( params.error ) {
+                    params.error(e);
+                }
                 onComplete();
             }
         });
@@ -287,26 +346,33 @@
 
     ab.prototype.startTracking = function(experiment, callback){
         this.getGroup(experiment.name, this.proxy(function(data){
-            if ( data && data.status === 'OK' ) {
-                var userData = {
-                    id: data.user.id,
-                    group: data.user.group,
-                    targets: [experiment.targets[0]]
-                };
-                this.setUserData(experiment.name, userData);
-                this.saveUserData(experiment.name, userData, callback);
-            }
-            else {
-                this.sendError({
-                    message: 'Can\'t load get new user group',
-                    data: data
-                });
-            }
+            var userData = {
+                id: data.id,
+                group: data.group,
+                targets: [experiment.targets[0]]
+            };
+            this.setUserData(experiment.name, userData);
+            this.saveUserData(experiment.name, userData, callback);
         }, this));
     };
 
     ab.prototype.getExperiments = function(callback){
-        // from server
+
+        // this.ajax({
+        //     url: this.settings.host + this.settings.experiments,
+        //     complete: function(data){
+        //         if ( data && data.status === 'OK' ) {
+        //             callback && callback(data.experiments);
+        //         }
+        //         else {
+        //             this.sendError({
+        //                 message: 'Can\'t load experiments',
+        //                 data: data
+        //             });
+        //         }
+        //     }
+        // });
+
         callback({
             status: 'OK',
             experiments: [
@@ -330,7 +396,15 @@
         });
     };
 
-    ab.prototype.initialize = function(){
+    ab.prototype.initialize = function(options){
+        if ( !options || !options.id ) {
+            this.sendError({
+                message: 'No id provided',
+                data: options
+            });
+            return;
+        }
+        thi.settings.id = options.id;
         this.getExperiments(this.proxy(function(data){
             if ( data && data.status === 'OK' ) {
                 this.experiments = data.experiments;
@@ -357,7 +431,6 @@
     };
 
     window.AB = new ab();
-    AB.initialize();
 
 }());
 

@@ -1,4 +1,4 @@
-(function(){
+window.AB = (function(){
 
     function ab(){
 
@@ -426,6 +426,6 @@
         }, this);
     };
 
-    window.AB = new ab();
+    return new ab();
 
 }());

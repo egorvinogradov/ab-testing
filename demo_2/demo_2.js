@@ -182,20 +182,31 @@ ab.prototype.control = function(experimentName){
 };
 
 ab.prototype.write = function(experimentName, params){
-    var fakeElementIds = {
-        control: ''
-    };
-
-
-    var fakeElements = {
-        name: {},
-        control: '<ab id=""></ab>'
-    };
     document.write(
         this.control(experimentName)
             ? params.control
             : params.test
     );
+};
+
+ab.prototype.execute = function(experimentName, params){
+    var scriptEl = document.createElement('script');
+    var scriptCode;
+    if ( this.control(experimentName) ) {
+        if ( params.control ) {
+            scriptCode = '(' + params.control.toString() + '(\'' + experimentName + '\', \'control\'))';
+        }
+    }
+    else {
+        if ( params.test ) {
+            scriptCode = '(' + params.test.toString() + '(\'' + experimentName + '\', \'test\'))';
+        }
+    }
+    scriptEl.className = 'ab_execute';
+    scriptEl.innerHTML = scriptCode;
+    document
+        .getElementsByTagName('body')[0]
+        .appendChild(scriptEl);
 };
 
 ab.prototype.startTracking = function(experiment, callback){

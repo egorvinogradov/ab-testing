@@ -1,56 +1,108 @@
+var nodeStatic = require('node-static');
 var http = require('http');
 var url = require('url');
 
-var port = process.env.PORT || 5000;
-var proxy = function(request, response){
-
-    console.log('url', request.url);
-    
-    var chunks = [];
-    var headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'X-Booking-AID, X-Booking-Pageview-Id, X-Booking-Session-Id' // TODO: find out how to allow all
-    };
-    var loaderOptions = {
-        host: 'ostrovok.ru',
-        port: 80,
-        path: url.parse(request.url).pathname + url.parse(request.url).search,
-        method: 'GET'
-    };
-
-    var closeConnection = function(statusCode, headers, data){
-        response.writeHead(statusCode, headers);
-        response.write(data);
-        response.end();
-    };
-
-    var joinObjects = function(obj1, obj2){
-        for ( var key in obj2 ) {
-            obj1[key] = obj2[key];
-        }
-    };
-
-    var loader = http.request(loaderOptions, function(res){
-        console.log('response', res.statusCode, '\n', res.headers, '\n\n');
-        res.setEncoding('utf8');
-        res.on('data', function(chunk){
-            console.log('data', chunk, '\n\n');
-            chunks.push(chunk);
-            joinObjects(headers, res.headers);
-        });
-        res.on('end', function(){
-            closeConnection(200, headers, chunks.join(''));
-        });
-    });
-
-    loader.on('error', function(e){
-        console.log('error', e, '\n\n');
-        closeConnection(500, headers, JSON.stringify({
-            status: 500
-        }));
-    });
-
-    loader.end();
+console.log = function(){
+    Array.prototype.unshift.call(arguments, '[' + new Date() + ']');
+    console.log.apply(console, arguments);
 };
 
-http.createServer(proxy).listen(port);
+
+/* Router */
+
+var Router = function(){
+    /** @constructor */
+};
+
+Router.prototype = {
+    experiments: {
+        pathnameRegExp: /\/experiments.*/,
+        callback: function(options){
+            console.log('Experiments:', options.request.url + '\n\n');
+        }
+    },
+    group: {
+        pathnameRegExp: /\/group.*/,
+        callback: function(options){
+            console.log('Group:', options.request.url + '\n\n');
+        }
+    },
+    error: {
+        pathnameRegExp: /\/error.*/,
+        callback: function(options){
+            console.log('Error:', options.request.url + '\n\n');
+        }
+    },
+    track: {
+        pathnameRegExp: /\/track.*/,
+        callback: function(options){
+            console.log('Track:', options.request.url + '\n\n');
+        }
+    },
+    staticFiles: {
+        callback: function(options){
+            console.log('Static file:', options.request.url + '\n\n');
+        }
+    }
+};
+
+
+/* Server */
+
+var Server = function(){
+    /** @constructor */
+};
+
+Server.prototype = {
+    initialize: function(router, port){
+        this.router = router;
+        this.port = port;
+        this.server = http.createServer(this.onRequest);
+        this.server.listen(port);
+    },
+    onRequest: function(request, response){
+        console.log(request.url + '\n\n');
+        this.selectRoute({
+            request: request,
+            response: response,
+            success: function(data){
+                this.onSuccess(response, data);
+            },
+            error: function(e){
+                this.onError(response, e);
+            }
+        });
+    },
+    selectRoute: function(options){
+        var requestPathname = url.parse(options.request.url).pathname;
+        for ( var route in this.router ) {
+            if ( this.router[route].pathnameRegExp.test(requestPathname) ) {
+                this.router[route].callback(options);
+                return;
+            }
+        }
+        this.router.staticFiles.callback(options);
+    },
+    onSuccess: function(response, data){
+        response.writeHead(200, {
+            'X-Powered': 'node.js'
+        });
+        response.write(data);
+        response.end();
+    },
+    onError: function(response, e){
+        response.writeHead(404, {
+            'X-Powered': 'node.js'
+        });
+        response.write(JSON.stringify({
+            status: 404
+        }));
+        response.end();
+    }
+};
+
+var server = new Server();
+server.initialize(
+    new Router(),
+    process.env.PORT || 3000
+);

@@ -6,16 +6,19 @@ window.AB = (function(){
         
         this.settings = {
             host: 'http://127.0.0.1:3000/api',
-            experiment: '/experiment',
-            group: '/group',
-            error: '/error'
+            routes: {
+                experiments: '/experiments',
+                group: '/group',
+                error: '/error',
+                track: '/track'
+            }
         };
     };
 
     ab.prototype.getGroup = function(experimentName, callback){
 
         this.ajax({
-            url: this.settings.host + this.settings.group,
+            url: this.settings.host + this.settings.routes.group,
             data: {
                 experiment: experimentName
             },
@@ -63,7 +66,7 @@ window.AB = (function(){
 
     ab.prototype.saveUserData = function(experimentName, params, callback){
         this.ajax({
-            url: this.settings.host + this.settings.track,
+            url: this.settings.host + this.settings.routes.track,
             data: this.extend({
                 experiment: experimentName
             }, params),
@@ -91,7 +94,7 @@ window.AB = (function(){
         };
         logError(e.message, e);
         this.ajax({
-            url: this.settings.host + this.settings.error,
+            url: this.settings.host + this.settings.routes.error,
             data: e,
             complete: function(data){
                 if ( !data || !data.status !== 'OK' ) {
@@ -355,7 +358,7 @@ window.AB = (function(){
     ab.prototype.getExperiments = function(callback){
 
         this.ajax({
-            url: this.settings.host + this.settings.experiments,
+            url: this.settings.host + this.settings.routes.experiments,
             complete: function(data){
                 if ( data && data.status === 'OK' ) {
                     callback && callback(data.experiments);

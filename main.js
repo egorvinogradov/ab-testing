@@ -2,6 +2,9 @@ var nodeStatic = require('node-static');
 var http = require('http');
 var url = require('url');
 
+
+/* Common */
+
 console._log = console.log;
 console.log = function(){
     Array.prototype.unshift.call(arguments, new Date() + ':\n');
@@ -12,10 +15,11 @@ console.log = function(){
 $ = {
     proxy: function(func, context){
         return function(){
-            func.apply(context, arguments);
+            func.apply(context || {}, arguments);
         };
     }
 };
+
 
 
 /* Router */
@@ -55,10 +59,18 @@ Router.prototype = {
         staticFiles: {
             callback: function(options){
                 console.log('Static file:', options.request.url);
+                // TODO: get static file
+                var mockData = {
+                    ololo: 1111
+                };
+                options.success(
+                    JSON.stringify(mockData)
+                );
             }
         }
     }
 };
+
 
 
 /* Server */
@@ -79,12 +91,13 @@ Server.prototype = {
         this.selectRoute({
             request: request,
             response: response,
-            success: function(data){
+            success: $.proxy(function(data){
+                console.log('On success');
                 this.onSuccess(response, data);
-            },
-            error: function(e){
+            }, this),
+            error: $.proxy(function(e){
                 this.onError(response, e);
-            }
+            }, this)
         });
     },
     selectRoute: function(options){

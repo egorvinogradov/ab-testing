@@ -95,7 +95,7 @@ Router.prototype = {
                 staticServer.serve(options.request, options.response, $.proxy(function(error, result){
                     
                     if ( error ) {
-                        
+
                         var defaultFileExtension = options.config.staticServer.defaultFileExtension;
                         var defaultFileExtensionRegExp = new RegExp('/\\' + defaultFileExtension + '$', 'i');
                         
@@ -105,11 +105,19 @@ Router.prototype = {
                             staticServer.serve(options.request, options.response, function(error, result){
                             
                                 if ( error ) {
+
                                     console.log('Error:', options.request.url, error);
                                     var errorPageUrl = error.status in options.config.errorPages
                                         ? options.config.errorPages[error.status]
                                         : options.config.errorPages.default;
-                                    staticServer.serveFile(errorPageUrl, error.status, {}, options.request, options.response);
+
+                                    staticServer.serveFile(
+                                        errorPageUrl,
+                                        error.status,
+                                        {},
+                                        options.request,
+                                        options.response
+                                    );
                                 }
                             });
                         }

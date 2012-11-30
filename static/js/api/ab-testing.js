@@ -403,7 +403,7 @@ window.AB = (function(){
             });
             return;
         }
-        thi.settings.id = options.id;
+        this.settings.id = options.id;
         this.getExperiments(this.proxy(function(data){
             if ( data && data.status === 'OK' ) {
                 this.experiments = data.experiments;

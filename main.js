@@ -44,6 +44,9 @@ var serverConfig = {
         defaultFileExtension: '.html',
         root: './static',
         cache: 600
+    },
+    api: {
+        urlPrefix: '/api'
     }
 };
 
@@ -60,7 +63,7 @@ Router.prototype = {
             pathnameRegExp: /\/experiments.*/,
             callback: function(options){
                 console.log('Experiments:', options.request.url);
-                options.success(JSON.stringify({
+                options.success({
                     status: 'OK',
                     experiments: [
                         {
@@ -80,38 +83,38 @@ Router.prototype = {
                             ]
                         }
                     ]
-                }));
+                });
             }
         },
         group: {
             pathnameRegExp: /\/group.*/,
             callback: function(options){
                 console.log('Group:', options.request.url);
-                options.success(JSON.stringify({
+                options.success({
                     status: 'OK',
                     user: {
                         id: 1,
                         group: 'test'
                     }
-                }));
+                });
             }
         },
         error: {
             pathnameRegExp: /\/error.*/,
             callback: function(options){
                 console.log('Error:', options.request.url);
-                options.success(JSON.stringify({
+                options.success({
                     status: 'OK'
-                }));
+                });
             }
         },
         track: {
             pathnameRegExp: /\/track.*/,
             callback: function(options){
                 console.log('Track:', options.request.url);
-                options.success(JSON.stringify({
+                options.success({
                     status: 'OK'
-                }));
+                });
             }
         }
     },
@@ -191,8 +194,9 @@ Server.prototype = {
     },
     selectRoute: function(options){
         var requestPathname = url.parse(options.request.url).pathname;
+        var apiPath = requestPathname.substr(this.config.api.urlPrefix.length);
         for ( var routeName in this.router.api ) {
-            if ( this.router.api[routeName].pathnameRegExp.test(requestPathname) ) {
+            if ( this.router.api[routeName].pathnameRegExp.test(apiPath) ) {
                 this.router.api[routeName].callback(options);
                 return;
             }
@@ -205,14 +209,16 @@ Server.prototype = {
     },
     onSuccess: function(response, data){
         response.writeHead(200, {
-            'X-Powered': 'node.js'
+            'Content-Type': 'application/json'
         });
-        response.write(data);
+        response.write(
+            JSON.stringify(data)
+        );
         response.end();
     },
     onError: function(response, e){
         response.writeHead(404, {
-            'X-Powered': 'node.js'
+            'Content-Type': 'application/json'
         });
         response.write(JSON.stringify({
             status: 404

@@ -102,7 +102,6 @@ Server.prototype = {
 };
 
 var server = new Server();
-server.initialize(
-    new Router(),
-    process.env.PORT || 3000
-);
+var router = new Router();
+var port = process.env.PORT || 3000;
+server.initialize(router, port);

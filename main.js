@@ -17,14 +17,40 @@ $ = {
         return function(){
             func.apply(context || {}, arguments);
         };
+    },
+    extend: function(){
+        if ( arguments.length < 2 ) {
+            return arguments[0];
+        }
+        var result = arguments[0] || {};
+        for ( var i = 0, l = arguments.length; i < l; i++ ) {
+            var obj = arguments[i];
+            for ( var prop in obj ) {
+                result[prop] = obj[prop];
+            }
+        }
+        return result;
     }
 };
 
 
 
+var serverConfig = {
+    errorPages: {
+        '404': '/404.html',
+        '500': '/500.html',
+        'default': '/500.html'
+    },
+    staticServer: {
+        root: './static',
+        cache: 600 // TODO: wtf is that?
+    }
+};
+
+
 /* Router */
 
-var Router = function(){
+Router = function(){
     /** @constructor */
 };
 
@@ -59,13 +85,19 @@ Router.prototype = {
         staticFiles: {
             callback: function(options){
                 console.log('Static file:', options.request.url);
-                // TODO: get static file
-                var mockData = {
-                    ololo: 1111
-                };
-                options.success(
-                    JSON.stringify(mockData)
-                );
+                var staticServer = new nodeStatic.Server(options.config.staticServer.root, {
+                    cache: options.config.staticServer.cache
+                });
+                staticServer.serve(options.request, options.response, $.proxy(function(error, result){
+                    if ( error ) {
+                        console.log('Error:', options.request.url, error);
+                        var errorPageUrl = error.status in options.config.errorPages
+                            ? options.config.errorPages[error.status]
+                            : options.config.errorPages['default'];
+                        options.request.url = errorPageUrl;
+                        this.callback(options);
+                    }
+                }, this));
             }
         }
     }
@@ -80,7 +112,8 @@ var Server = function(){
 };
 
 Server.prototype = {
-    initialize: function(router, port){
+    initialize: function(router, port, config){
+        this.config = config;
         this.router = router;
         this.port = port;
         this.server = http.createServer($.proxy(this.onRequest, this));
@@ -108,7 +141,11 @@ Server.prototype = {
                 return;
             }
         }
-        this.router.defaults.staticFiles.callback(options);
+        this.router.defaults.staticFiles.callback(
+            $.extend(options, {
+                config: this.config
+            }
+        ));
     },
     onSuccess: function(response, data){
         response.writeHead(200, {
@@ -131,5 +168,5 @@ Server.prototype = {
 var server = new Server();
 var router = new Router();
 var port = process.env.PORT || 3000;
-server.initialize(router, port);
+server.initialize(router, port, serverConfig);
 console.log('Server started on ' + port);

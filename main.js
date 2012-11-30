@@ -1,7 +1,6 @@
-var nodeStatic = require('node-static');
 var http = require('http');
 var url = require('url');
-
+var nodeStatic = require('node-static');
 
 /* Common */
 
@@ -12,7 +11,7 @@ console.log = function(){
     console._log.apply({}, arguments);
 };
 
-$ = {
+var $ = {
     proxy: function(func, context){
         return function(){
             func.apply(context || {}, arguments);
@@ -44,86 +43,118 @@ var serverConfig = {
     staticServer: {
         defaultFileExtension: '.html',
         root: './static',
-        cache: 600 // TODO: wtf is that?
+        cache: 600
     }
 };
 
 
 /* Router */
 
-Router = function(){
+var Router = function(){
     /** @constructor */
 };
 
 Router.prototype = {
-    routes: {
+    api: {
         experiments: {
             pathnameRegExp: /\/experiments.*/,
             callback: function(options){
                 console.log('Experiments:', options.request.url);
+                options.success(JSON.stringify({
+                    status: 'OK',
+                    experiments: [
+                        {
+                            name: 'red_button_vs_blue_button',
+                            targets: [
+                                'index',
+                                'catalog',
+                                'promo'
+                            ]
+                        },
+                        {
+                            name: 'left_sidebar_vs_right_sidebar',
+                            targets: [
+                                'hotelpage',
+                                'catalog',
+                                'payment'
+                            ]
+                        }
+                    ]
+                }));
             }
         },
         group: {
             pathnameRegExp: /\/group.*/,
             callback: function(options){
                 console.log('Group:', options.request.url);
+                options.success(JSON.stringify({
+                    status: 'OK',
+                    user: {
+                        id: 1,
+                        group: 'test'
+                    }
+                }));
             }
         },
         error: {
             pathnameRegExp: /\/error.*/,
             callback: function(options){
                 console.log('Error:', options.request.url);
+                options.success(JSON.stringify({
+                    status: 'OK'
+                }));
             }
         },
         track: {
             pathnameRegExp: /\/track.*/,
             callback: function(options){
                 console.log('Track:', options.request.url);
+                options.success(JSON.stringify({
+                    status: 'OK'
+                }));
             }
         }
     },
-    defaults: {
-        staticFiles: {
-            callback: function(options){
-                
-                console.log('Static file:', options.request.url);
-                
-                var staticServer = new nodeStatic.Server(options.config.staticServer.root, {
-                    cache: options.config.staticServer.cache
-                });
+    staticFiles: {
+        callback: function(options){
+            
+            console.log('Static file:', options.request.url);
+            
+            var staticServer = new nodeStatic.Server(options.config.staticServer.root, {
+                cache: options.config.staticServer.cache
+            });
 
-                staticServer.serve(options.request, options.response, $.proxy(function(error, result){
+            staticServer.serve(options.request, options.response, $.proxy(function(error, result){
+                
+                if ( error ) {
+
+                    var defaultFileExtension = options.config.staticServer.defaultFileExtension;
+                    var defaultFileExtensionRegExp = new RegExp('/\\' + defaultFileExtension + '$', 'i');
                     
-                    if ( error ) {
+                    if ( !defaultFileExtensionRegExp.test(options.request.url) ) {
 
-                        var defaultFileExtension = options.config.staticServer.defaultFileExtension;
-                        var defaultFileExtensionRegExp = new RegExp('/\\' + defaultFileExtension + '$', 'i');
+                        options.request.url = options.request.url.replace(/\/$/, '') + defaultFileExtension;
+                        staticServer.serve(options.request, options.response, function(error, result){
                         
-                        if ( !defaultFileExtensionRegExp.test(options.request.url) ) {
+                            if ( error ) {
 
-                            options.request.url = options.request.url.replace(/\/$/, '') + defaultFileExtension;
-                            staticServer.serve(options.request, options.response, function(error, result){
-                            
-                                if ( error ) {
+                                console.log('Error:', options.request.url, error);
+                                var errorPageUrl = error.status in options.config.errorPages
+                                    ? options.config.errorPages[error.status]
+                                    : options.config.errorPages.default;
 
-                                    console.log('Error:', options.request.url, error);
-                                    var errorPageUrl = error.status in options.config.errorPages
-                                        ? options.config.errorPages[error.status]
-                                        : options.config.errorPages.default;
-
-                                    staticServer.serveFile(
-                                        errorPageUrl,
-                                        error.status,
-                                        {},
-                                        options.request,
-                                        options.response
-                                    );
-                                }
-                            });
-                        }
+                                staticServer.serveFile(
+                                    errorPageUrl,
+                                    error.status,
+                                    {},
+                                    options.request,
+                                    options.response
+                                );
+                            }
+                        });
                     }
-                }, this));
-            }
+                }
+            }, this));
         }
     }
 };
@@ -160,13 +191,13 @@ Server.prototype = {
     },
     selectRoute: function(options){
         var requestPathname = url.parse(options.request.url).pathname;
-        for ( var routeName in this.router.routes ) {
-            if ( this.router.routes[routeName].pathnameRegExp.test(requestPathname) ) {
-                this.router.routes[routeName].callback(options);
+        for ( var routeName in this.router.api ) {
+            if ( this.router.api[routeName].pathnameRegExp.test(requestPathname) ) {
+                this.router.api[routeName].callback(options);
                 return;
             }
         }
-        this.router.defaults.staticFiles.callback(
+        this.router.staticFiles.callback(
             $.extend(options, {
                 config: this.config
             }

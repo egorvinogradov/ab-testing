@@ -371,28 +371,6 @@ window.AB = (function(){
                 }
             }
         });
-
-        // callback({
-        //     status: 'OK',
-        //     experiments: [
-        //         {
-        //             name: 'red_button_vs_blue_button',
-        //             targets: [
-        //                 'index',
-        //                 'catalog',
-        //                 'promo'
-        //             ]
-        //         },
-        //         {
-        //             name: 'left_sidebar_vs_right_sidebar',
-        //             targets: [
-        //                 'hotelpage',
-        //                 'catalog',
-        //                 'payment'
-        //             ]
-        //         }
-        //     ]
-        // });
     };
 
     ab.prototype.initialize = function(options){

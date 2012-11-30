@@ -2,11 +2,12 @@ var nodeStatic = require('node-static');
 var http = require('http');
 var url = require('url');
 
+console._log = console.log;
 console.log = function(){
-    Array.prototype.unshift.call(arguments, '[' + new Date() + ']');
-    console.log.apply(console, arguments);
+    Array.prototype.unshift.call(arguments, '[' + new Date() + ']:\n');
+    Array.prototype.push.call(arguments, '\n');
+    console._log.apply({}, arguments);
 };
-
 
 /* Router */
 
@@ -18,30 +19,30 @@ Router.prototype = {
     experiments: {
         pathnameRegExp: /\/experiments.*/,
         callback: function(options){
-            console.log('Experiments:', options.request.url + '\n\n');
+            console.log('Experiments:', options.request.url);
         }
     },
     group: {
         pathnameRegExp: /\/group.*/,
         callback: function(options){
-            console.log('Group:', options.request.url + '\n\n');
+            console.log('Group:', options.request.url);
         }
     },
     error: {
         pathnameRegExp: /\/error.*/,
         callback: function(options){
-            console.log('Error:', options.request.url + '\n\n');
+            console.log('Error:', options.request.url);
         }
     },
     track: {
         pathnameRegExp: /\/track.*/,
         callback: function(options){
-            console.log('Track:', options.request.url + '\n\n');
+            console.log('Track:', options.request.url);
         }
     },
     staticFiles: {
         callback: function(options){
-            console.log('Static file:', options.request.url + '\n\n');
+            console.log('Static file:', options.request.url);
         }
     }
 };
@@ -61,7 +62,7 @@ Server.prototype = {
         this.server.listen(port);
     },
     onRequest: function(request, response){
-        console.log(request.url + '\n\n');
+        console.log(request.url);
         this.selectRoute({
             request: request,
             response: response,
@@ -105,3 +106,4 @@ var server = new Server();
 var router = new Router();
 var port = process.env.PORT || 3000;
 server.initialize(router, port);
+console.log('Server started on ' + port);
